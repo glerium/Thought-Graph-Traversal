@@ -1,0 +1,31 @@
+{
+    "organ_list": [
+        "cardiomediastinal silhouette",
+        "heart",
+        "lungs",
+        "pneumothorax",
+        "pleural effusion"
+    ],
+    "database": {
+        "cardiomediastinal silhouette": {
+            "size": 0,
+            "database": []
+        },
+        "heart": {
+            "size": 0,
+            "database": []
+        },
+        "lungs": {
+            "size": 0,
+            "database": []
+        },
+        "pneumothorax": {
+            "size": 0,
+            "database": []
+        },
+        "pleural effusion": {
+            "size": 0,
+            "database": []
+        }
+    }
+}

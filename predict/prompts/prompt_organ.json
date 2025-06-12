@@ -1,0 +1,47 @@
+{
+    "cardiomediastinal silhouette": {
+        "reply": [
+            "the cardiomediastinal silhouette is stable from prior exam",
+            "normal cardiomediastinal silhouette",
+            "the cardiomediastinal silhouette is normal in size and contour",
+            "normal cardiomediastinal silhouette and hilar contours",
+            "frontal and lateral views of the chest show an unchanged cardiomediastinal silhouette"
+        ]
+    },
+    "heart": {
+        "reply": [
+            "heart XXXX, mediastinum, XXXX, bony structures and lung XXXX are unremarkable",
+            "the heart is normal in size",
+            "the heart is normal in size and contour",
+            "the heart is within normal limits",
+            "heart size and pulmonary vascular engorgement appear within limits of normal"
+        ]
+    },
+    "lungs": {
+        "reply": [
+            "the lungs are clear bilaterally",
+            "the lungs are clear without evidence of infiltrate",
+            "the lungs are hyperinflated with biapical pleural-parenchymal scarring and upward retraction of the XXXX, similar to the prior study. There are multiple reticular-nodular opacities in the upper lobes bilaterally which appear grossly stable from the prior study",
+            "the lungs are hypoinflated",
+            "the heart and lungs have xxxx xxxx in the interval"
+        ]
+    },
+    "pneumothorax": {
+        "reply": [
+            "no masses or effusions edema pneumothorax nodules",
+            "there is no pneumothorax",
+            "there is no pneumothorax or pleural effusion",
+            "there is no pleural effusion or pneumothorax",
+            "no large pleural effusion or pneumothorax"
+        ]
+    },
+    "pleural effusion": {
+        "reply": [
+            "focal alveolar consolidation no definite pleural effusion seen",
+            "there is no pleural effusion",
+            "pleural effusion or pneumothorax",
+            "no evidence of focal consolidation pneumothorax or pleural effusion",
+            "specifically no evidence of focal consolidation pneumothorax or pleural effusion"
+        ]
+    }
+}

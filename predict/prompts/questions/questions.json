@@ -1,0 +1,56 @@
+{
+    "question": [
+        {
+            "question": "Is/Are the {organ} in the image clearly visible?",
+            "thought": [
+                "By carefully examining the X-ray image, the borders of the {organ} is/are clear, density is evenly distributed, and there is no obvious obstruction or artifact. This indicates good image quality, allowing accurate identification and assessment. The overall contrast and exposure are within normal ranges.",
+                "When reviewing the image, the {organ} have/has distinct boundaries compared to surrounding tissues, and structural details are recognizable. There is no overexposure or underexposure, suggesting appropriate imaging parameters and allowing clear identification of the {organ}.",
+                "When examining the X-ray image, the {organ} contours appear blurry, with low contrast against surrounding tissues, and some artifacts are present. This could be due to underexposure or pathological factors, making it difficult to accurately assess the {organ}."
+            ],
+            "reply": [
+                "the {organ} is/are clearly visible",
+                "the {organ} is/are clearly visible",
+                "the {organ} is/are not clearly visible in the image"
+            ]
+        },
+        {
+            "question": "Is/Are the outline of the {organ} in the image normal?",
+            "thought": [
+                "When examining the image, the {organ} outline is smooth, continuous, and regular, without abnormal bulging, indentation, or blurred edges. Surrounding structures maintain their normal relationships, suggesting the {organ} outline is normal.",
+                "Upon observation, the {organ} show(s) a uniform and regular outline without distortion or disruption. The overall morphology is consistent with typical anatomical appearance, thus the {organ} outline is considered normal.",
+                "In the image, the outline of the {organ} shows irregular bulges and slight blurring, with indistinct borders compared to normal appearance. This may suggest pathological changes, such as a mass, effusion, or other abnormalities, indicating an abnormal outline."
+            ],
+            "reply": [
+                "the outline of the {organ} is/are normal",
+                "the outline of the {organ} is/are normal",
+                "the outline of the {organ} is/are not normal"
+            ]
+        },
+        {
+            "question": "Is/Are the size of the {organ} in the image normal?",
+            "thought": [
+                "By examining the X-ray image, the size of the {organ} falls within the normal physiological range, maintaining appropriate proportion with adjacent anatomical structures. There is no sign of enlargement or shrinkage, indicating the size is normal.",
+                "When evaluating the X-ray, the {organ} size matches standard reference values, with good left-right symmetry and no localized expansion or shrinkage. Considering basic patient information, the {organ} size is determined to be within normal limits.",
+                "On the image, the {organ} appear(s) significantly enlarged, exceeding normal anatomical boundaries and affecting the relationship with surrounding organs. This abnormal size may be related to pathological conditions, suggesting the size is not normal."
+            ],
+            "reply": [
+                "the size of the {organ} is/are normal",
+                "the size of the {organ} is/are normal",
+                "the size of the {organ} is/are not normal"
+            ]
+        },
+        {
+            "question": "Is/Are there any signs of lesions/pathological changes in the {organ} in the image?",
+            "thought": [
+                "Upon close examination, the {organ} appear(s) structurally intact with uniform density and no abnormal shadows, nodules, or shape changes. Surrounding tissue relationships are normal, suggesting no apparent pathological changes.",
+                "Through evaluation, the {organ} area shows a clear image with no abnormal high-density or low-density areas, smooth contours, and normal structure. No masses, infiltration, or other pathological signs are observed, suggesting no lesions.",
+                "In the image, a localized abnormal density with irregular margins is observed in the {organ} area, along with compression or displacement of surrounding tissues. These imaging features suggest the presence of pathological changes, warranting further investigation."
+            ],
+            "reply": [
+                "there is/are no signs of lesions or pathological changes in the {organ}",
+                "there is/are no signs of lesions or pathological changes in the {organ}",
+                "there is/are sign(s) of lesions or pathological changes in the {organ}"
+            ]
+        }
+    ]
+}
