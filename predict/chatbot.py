@@ -86,7 +86,6 @@ def ask(prompt: str, image_dirs: List[str], device: str, bot_type: str, chat_typ
         
         elif chat_type == 'verify':
             reply = bool(response_json.get('is_correct', False))
-            reply = True        # Temporarily set to True for testing
             return True, reply
     
     except json.JSONDecodeError as e:
