@@ -1,1 +1,4 @@
 __pycache__/
+**/HuatuoGPT-Vision-7B/
+**/logs/
+**/outputs/

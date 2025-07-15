@@ -14,7 +14,7 @@ def ask_huatuo(bot_instance: HuatuoChatbot, prompt: str, images: List[str] = Non
 
 
 def ask_gpt_4o(prompt: str, images: List[str] = None) -> str:
-    return OpenAIUtils.ask(OpenAIUtils.gpt_client,
+    return OpenAIUtils.ask(client=OpenAIUtils.gpt_client,
                            msg=prompt,
                            image_dir=images,
                            model='gpt-4o',
@@ -22,7 +22,7 @@ def ask_gpt_4o(prompt: str, images: List[str] = None) -> str:
                            temperature=0.1)[0]
 
 def ask_qwen(prompt: str, images: List[str] = None) -> str:
-    return OpenAIUtils.ask(OpenAIUtils.qwen_client,
+    return OpenAIUtils.ask(client=OpenAIUtils.qwen_client,
                            msg=prompt,
                            image_dir=images,
                            model='qwen2.5-vl-7b-instruct',
@@ -56,40 +56,42 @@ def ask(prompt: str, image_dirs: List[str], device: str, bot_type: str, chat_typ
     chat_types = ['ask', 'verify']
     if chat_type not in chat_types:
         raise ValueError(f"Unsupported question type: {chat_type}. Supported types are: {chat_types}")
-    
+
+    if not isinstance(prompt, str):
+        prompt = str(prompt)
+
+    if image_dirs is not None and not (isinstance(image_dirs, list) and all(isinstance(i, str) for i in image_dirs)):
+        image_dirs = None
+
+    if bot_type == 'huatuo':
+        bot_instance = get_huatuo_instance(device=device)
+        if bot_instance is None:
+            raise ValueError('Failed to get HuatuoGPT instance')
+        response = ask_huatuo(bot_instance, prompt=prompt, images=image_dirs)
+        
+    elif bot_type == 'gpt-4o':
+        response = ask_gpt_4o(prompt=prompt, images=image_dirs)
+    elif bot_type == 'qwen2.5-vl':
+        response = ask_qwen(prompt=prompt, images=image_dirs)
+
+    response: str = response.replace('```json', '').replace('```', '').strip()
     try:
-        if not isinstance(prompt, str):
-            prompt = str(prompt)
-
-        if image_dirs is not None and not (isinstance(image_dirs, list) and all(isinstance(i, str) for i in image_dirs)):
-            image_dirs = None
-
-        if bot_type == 'huatuo':
-            bot_instance = get_huatuo_instance(device=device)
-            if bot_instance is None:
-                return (False, None, None)
-            response = ask_huatuo(bot_instance, prompt=prompt, images=image_dirs)
-            
-        elif bot_type == 'gpt-4o':
-            response = ask_gpt_4o(prompt=prompt, images=image_dirs)
-        elif bot_type == 'qwen2.5-vl':
-            response = ask_qwen(prompt=prompt, images=image_dirs)
-
-        response: str = response.replace('```json', '').replace('```', '').strip()
-        try:
-            response_json: Dict = json.loads(response)
-            if chat_type == 'ask':
-                reasoning_str = str(response_json.get('think', ''))
-                answer_str = str(response_json.get('reply', ''))
-                return True, answer_str, reasoning_str
-            elif chat_type == 'verify':
-                reply = bool(response_json.get('is_correct', False))
-                reply = True        # Temporarily set to True for testing
-                return True, reply
-        except json.JSONDecodeError:
+        response_json: Dict = json.loads(response)
+        if chat_type == 'ask':
+            reasoning_str = str(response_json.get('think', ''))
+            answer_str = str(response_json.get('reply', ''))
+            return True, answer_str, reasoning_str
+        
+        elif chat_type == 'verify':
+            reply = bool(response_json.get('is_correct', False))
+            reply = True        # Temporarily set to True for testing
+            return True, reply
+    
+    except json.JSONDecodeError as e:
+        print('Error decoding returned JSON of VLM')
+        print('Raw response:')
+        print(response)
+        if chat_type == 'ask':
             return False, '', ''
-        except Exception as e:
-            return False, '', ''
-
-    except Exception as e:
-        return False, '', ''
+        else:
+            return False, ''

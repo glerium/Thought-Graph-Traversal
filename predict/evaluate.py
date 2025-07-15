@@ -89,199 +89,146 @@ def postprocess(answer: str) -> str:
     answer = answer.strip()
     return answer
 
-def process_single_sample_worker(idx: int, sample_id: str, gt: str, image_dir: List[str],
-                                 organ_examples: Dict[str, Dict[str, List[str]]], organ_template: str,
-                                 question_examples: List[Dict[str, Union[str, List[str]]]], questions_template: str,
-                                 device: str) -> Tuple[int, str, int, Union[Dict[str, float], None], str]:
+def process(idx: int, sample_id: str, gt: str, image_dir: List[str],
+            organ_examples: Dict[str, Dict[str, List[str]]], organ_template: str,
+            question_examples: List[Dict[str, Union[str, List[str]]]], questions_template: str,
+            device: str) -> Tuple[int, str, int, Union[Dict[str, float], None], str]:
     reasoning_str_all_sample = ''
     answers_all_sample = ''
     final_answer_for_metrics = ""
 
-    try:
-        for organ, organ_example_item in organ_examples.items():
-            findings_for_organ: List[str] = []
-            for q_idx, question_item in enumerate(question_examples, start=1):
-                question = question_item['question'].format(organ=organ)
-                thought_examples = [str(i).format(organ=organ) if isinstance(i, str) and '{organ}' in i else str(i) for i in question_item.get('thought', [])]
-                reply_examples = [str(i).format(organ=organ) if isinstance(i, str) and '{organ}' in i else str(i) for i in question_item.get('reply', [])]
+    for organ, organ_example_item in organ_examples.items():
+        findings_for_organ: List[str] = []
+        for q_idx, question_item in enumerate(question_examples, start=1):
+            question = question_item['question'].format(organ=organ)
+            thought_examples = [str(i).format(organ=organ) if isinstance(i, str) and '{organ}' in i else str(i) for i in question_item.get('thought', [])]
+            reply_examples = [str(i).format(organ=organ) if isinstance(i, str) and '{organ}' in i else str(i) for i in question_item.get('reply', [])]
 
-                question_prompt = questions_template.format(
-                    organ=organ,
-                    question=question,
-                    thought_examples=thought_examples,
-                    reply_examples=reply_examples
-                )
-                verified = False
-                while not verified:
-                    print(1)
-                    success, answer, reasoning = chatbot.ask(prompt=question_prompt, 
-                                                            image_dirs=image_dir, 
-                                                            device=device, 
-                                                            bot_type=BOT_TYPE,
-                                                            chat_type='ask')
-                    answer = answer.replace('.', '').replace(',', '').strip()
-                    if not success:
-                        return idx, sample_id, 0, None, ""
-                    
-                    verify_prompt = verify_template.format(
-                        question=question,
-                        answer=answer,
-                        datetime=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    )
-                    success, verified = chatbot.ask(prompt=verify_prompt,
-                                                    image_dirs=image_dir,
-                                                    device=device,
-                                                    bot_type=BOT_TYPE,
-                                                    chat_type='verify')
-                    if not success:
-                        return idx, sample_id, 0, None, ""
-                
-                reasoning_str_all_sample += reasoning
-                findings_for_organ.append(answer)
-
-            organ_example_reply = organ_example_item.get('reply', [])
-            organ_example_reply_formatted = [str(i).format(organ=organ) if isinstance(i, str) and '{organ}' in i else str(i) for i in organ_example_reply]
-
-            findings_for_organ_str = [str(f) for f in findings_for_organ]
-
-            prompt = organ_template.format(
+            question_prompt = questions_template.format(
                 organ=organ,
-                findings='\n'.join(findings_for_organ_str),
-                reply_examples=organ_example_reply_formatted
+                question=question,
+                thought_examples=thought_examples,
+                reply_examples=reply_examples
             )
+            verified = False
+            while not verified:
+                while True:
+                    success, answer, reasoning = chatbot.ask(prompt=question_prompt, 
+                                                             image_dirs=image_dir, 
+                                                             device=device, 
+                                                             bot_type=BOT_TYPE,
+                                                             chat_type='ask')
+                    answer = answer.replace('.', '').replace(',', '').strip()
+                    if success:
+                        break
+                    else:
+                        print('Failed when prompting VLM. Retrying...')
+                        time.sleep(0.5)
+                #     return idx, sample_id, 0, None, ""
+                
+                verify_prompt = verify_template.format(
+                    question=question,
+                    answer=answer,
+                    datetime=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                )
+                success, verified = chatbot.ask(prompt=verify_prompt,
+                                                image_dirs=image_dir,
+                                                device=device,
+                                                bot_type=BOT_TYPE,
+                                                chat_type='verify')
+                # if not success:
+                #     return idx, sample_id, 0, None, ""
+            
+            reasoning_str_all_sample += reasoning
+            findings_for_organ.append(answer)
+
+        organ_example_reply = organ_example_item.get('reply', [])
+        organ_example_reply_formatted = [str(i).format(organ=organ) if isinstance(i, str) and '{organ}' in i else str(i) for i in organ_example_reply]
+
+        findings_for_organ_str = [str(f) for f in findings_for_organ]
+
+        prompt = organ_template.format(
+            organ=organ,
+            findings='\n'.join(findings_for_organ_str),
+            reply_examples=organ_example_reply_formatted
+        )
+        while True:
             success, organ_summary_answer, reasoning = chatbot.ask(prompt=prompt,
                                                                    image_dirs=image_dir, 
                                                                    device=device, 
                                                                    bot_type='huatuo',
                                                                    chat_type='ask')
-            if not success:
-                return idx, sample_id, 0, None, ""
-            reasoning_str_all_sample += reasoning
-            answers_all_sample += organ_summary_answer + '.'
+            if success:
+                break
+            else:
+                print('Failed when prompting VLM for organ summary. Retrying...')
 
-        final_answer_for_metrics = postprocess(answers_all_sample)
-        final_reasoning_for_metrics = postprocess(reasoning_str_all_sample)
-        reasoning_len = final_reasoning_for_metrics.count(' ') + 1 if final_reasoning_for_metrics.strip() else 0
+        reasoning_str_all_sample += reasoning
+        answers_all_sample += organ_summary_answer + '.'
 
+    final_answer_for_metrics = postprocess(answers_all_sample)
+    final_reasoning_for_metrics = postprocess(reasoning_str_all_sample)
+    reasoning_len = final_reasoning_for_metrics.count(' ') + 1 if final_reasoning_for_metrics.strip() else 0
+
+    gt_str = str(gt)
+    metric = compute_scores_single(gt_str, final_answer_for_metrics)
+
+    if not isinstance(metric, dict) or any(not isinstance(v, (int, float)) for v in metric.values()):
+        print(f"Worker process {os.getpid()}: compute_scores_single returned invalid format for sample {sample_id} ({idx}): {metric}", file=sys.stderr)
         metric = None
-        try:
-            gt_str = str(gt)
-            metric = compute_scores_single(gt_str, final_answer_for_metrics)
 
-            if not isinstance(metric, dict) or any(not isinstance(v, (int, float)) for v in metric.values()):
-                print(f"Worker process {os.getpid()}: compute_scores_single returned invalid format for sample {sample_id} ({idx}): {metric}", file=sys.stderr)
-                metric = None
-
-        except Exception as e:
-            print(f"Worker process {os.getpid()}: Error computing metrics for sample {sample_id} ({idx}): {e}", file=sys.stderr)
-            traceback.print_exc(file=sys.stderr)
-            metric = None
-
-        return idx, sample_id, reasoning_len, metric, final_answer_for_metrics
-
-    except Exception as e:
-        print(f"Worker process {os.getpid()}: Unhandled error during sample processing for sample {sample_id} ({idx}): {e}", file=sys.stderr)
-        traceback.print_exc(file=sys.stderr)
-        return idx, sample_id, 0, None, ""
+    return idx, sample_id, reasoning_len, metric, final_answer_for_metrics
 
 
 if __name__ == '__main__':
-    try:
-        NUM_GPUS = torch.cuda.device_count()
-        if NUM_GPUS == 0:
-            print("Error: No CUDA devices available. Exiting.", file=sys.stderr)
-            sys.exit(1)
-        print(f"Found {NUM_GPUS} CUDA devices.")
-    except Exception as e:
-        print(f"Error checking CUDA devices: {e}", file=sys.stderr)
-        print("Please ensure torch is installed and configured correctly for CUDA.", file=sys.stderr)
+    NUM_GPUS = torch.cuda.device_count()
+    if NUM_GPUS == 0:
+        print("Error: No CUDA devices available. Exiting.", file=sys.stderr)
         sys.exit(1)
+    print(f"Found {NUM_GPUS} CUDA devices.")
 
-    try:
-        data_gts = pd.read_table(GTS_PATH, sep='\t', names=['sample_id', 'text'], header=None, encoding='utf-8')
-        if data_gts.empty:
-            print(f"Warning: {GTS_PATH} is empty.", file=sys.stderr)
-    except FileNotFoundError:
-        print(f"Error: {GTS_PATH} not found. Please ensure the file exists.", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"Error loading {GTS_PATH}: {e}", file=sys.stderr)
-        sys.exit(1)
+    data_gts = pd.read_table(GTS_PATH, sep='\t', names=['sample_id', 'text'], header=None, encoding='utf-8')
+    if data_gts.empty:
+        print(f"Warning: {GTS_PATH} is empty.", file=sys.stderr)
 
 
-    try:
-        with open(FILE_METRICS_OUT, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerow(['id', 'sample_id', 'reasoning_len', 'BLEU_1', 'BLEU_2', 'BLEU_3', 'BLEU_4', 'METEOR', 'ROUGE_L'])
-    except IOError as e:
-        print(f"Error writing header to metrics output file {FILE_METRICS_OUT}: {e}", file=sys.stderr)
-        sys.exit(1)
+    with open(FILE_METRICS_OUT, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        writer.writerow(['id', 'sample_id', 'reasoning_len', 'BLEU_1', 'BLEU_2', 'BLEU_3', 'BLEU_4', 'METEOR', 'ROUGE_L'])
 
-    try:
-        with open(FILE_ANSWERS_OUT, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerow(['sample_id', 'answer'])
-    except IOError as e:
-        print(f"Error writing header to answers output file {FILE_ANSWERS_OUT}: {e}", file=sys.stderr)
-        sys.exit(1)
+    with open(FILE_ANSWERS_OUT, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        writer.writerow(['sample_id', 'answer'])
 
+    print(f"Processing {len(data_gts)} samples directly in a single process...")
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=NUM_GPUS) as executor:
-        futures = {}
-        print(f"Submitting {len(data_gts)} samples to ProcessPoolExecutor...")
+    with open(FILE_METRICS_OUT, 'a', newline='', encoding='utf-8', buffering=1) as f_metrics_out, \
+        open(FILE_ANSWERS_OUT, 'a', newline='', encoding='utf-8', buffering=1) as f_answers_out:
 
-        for idx, row in enumerate(data_gts.itertuples(index=False, name='Sample')):
+        metrics_writer = csv.writer(f_metrics_out)
+        answers_writer = csv.writer(f_answers_out)
+
+        for idx, row in tqdm(enumerate(data_gts.itertuples(index=False, name='Sample')), total=len(data_gts), desc="Processing samples"):
+            # print(row)
             sample_id = row.sample_id
             gt = row.text
             image_dir = glob.glob(os.path.join(DATA_PATH, f'{sample_id}/*.jpg'))
-            device = f'cuda:{idx % NUM_GPUS}'
+            
+            device = 'cuda:0'
 
-            future = executor.submit(process_single_sample_worker, idx, sample_id, gt, image_dir,
-                                      organ_examples, organ_template, question_examples, questions_template,
-                                      device)
-            futures[future] = (idx, sample_id)
+            result_idx, result_sample_id, reasoning_len, metric, final_answer = \
+                process(idx, sample_id, gt, image_dir,
+                                            organ_examples, organ_template, question_examples, questions_template,
+                                            device)
 
+            answers_writer.writerow([result_sample_id, final_answer])
 
-        print("Collecting and writing results immediately as they complete (skipping metrics on errors)...")
-        try:
-            with open(FILE_METRICS_OUT, 'a', newline='', encoding='utf-8', buffering=1) as f_metrics_out, \
-                 open(FILE_ANSWERS_OUT, 'a', newline='', encoding='utf-8', buffering=1) as f_answers_out:
+            if metric is not None:
+                row_data = [result_idx, result_sample_id, reasoning_len]
+                row_data.extend([metric.get('BLEU_1', 0.0), metric.get('BLEU_2', 0.0),
+                                metric.get('BLEU_3', 0.0), metric.get('BLEU_4', 0.0),
+                                metric.get('METEOR', 0.0), metric.get('ROUGE_L', 0.0)])
 
-                metrics_writer = csv.writer(f_metrics_out)
-                answers_writer = csv.writer(f_answers_out)
-
-                for future in tqdm(concurrent.futures.as_completed(futures), total=len(data_gts), desc="Processing samples"):
-                    idx, sample_id = futures[future]
-                    try:
-                        result_idx, result_sample_id, reasoning_len, metric, final_answer = future.result()
-
-                        try:
-                            answers_writer.writerow([result_sample_id, final_answer])
-                        except IOError as e:
-                            print(f"Error writing answer for sample {result_sample_id} ({result_idx}) to {FILE_ANSWERS_OUT}: {e}", file=sys.stderr)
-
-                        if metric is not None:
-                            try:
-                                row_data = [result_idx, result_sample_id, reasoning_len]
-                                row_data.extend([metric.get('BLEU_1', 0.0), metric.get('BLEU_2', 0.0),
-                                                 metric.get('BLEU_3', 0.0), metric.get('BLEU_4', 0.0),
-                                                 metric.get('METEOR', 0.0), metric.get('ROUGE_L', 0.0)])
-
-                                metrics_writer.writerow(row_data)
-                            except IOError as e:
-                                print(f"Error writing metrics for sample {result_sample_id} ({result_idx}) to {FILE_METRICS_OUT}: {e}", file=sys.stderr)
-
-                        else:
-                            print(f'Skipping writing metrics for sample {result_sample_id} ({result_idx}) due to processing or metric calculation error in worker.', file=sys.stderr)
-
-                    except Exception as exc:
-                        print(f'Sample {sample_id} ({idx}) processing failed severely in worker: {exc}', file=sys.stderr)
-                        traceback.print_exc(file=sys.stderr)
-                exit()
-
-        except IOError as e:
-            print(f"Error opening output files: {e}", file=sys.stderr)
-        except Exception as e:
-            print(f"An unexpected error occurred while collecting or writing results: {e}", file=sys.stderr)
+                metrics_writer.writerow(row_data)
 
     print("Processing complete.")

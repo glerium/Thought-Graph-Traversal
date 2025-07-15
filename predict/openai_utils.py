@@ -3,6 +3,9 @@ from typing import List
 import base64
 import os
 
+os.environ['HTTP_PROXY'] = "http://127.0.0.1:7890"
+os.environ['HTTPS_PROXY'] = "http://127.0.0.1:7890"
+
 class OpenAIUtils:
     gpt_client = OpenAI(
         api_key=os.environ.get('OPENAI_API_KEY', None)
