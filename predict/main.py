@@ -50,7 +50,7 @@ for loop_idx in range(num_loops):
     stderr_file = open(stderr_filename, 'w', encoding='utf-8')
 
     result = subprocess.run(
-        ['python', script_to_run],
+        ['python', '-u', script_to_run],
         env=env,
         stdout=stdout_file,
         stderr=stderr_file,

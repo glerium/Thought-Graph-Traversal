@@ -44,7 +44,7 @@ class OpenAIUtils:
                     }
                 })
         else:
-            print('No image appended.')
+            print(f'WARNING: No image appended. Input: {msg}')
 
         kwargs = {
             "messages": [
@@ -60,9 +60,7 @@ class OpenAIUtils:
         if temperature is not None:
             kwargs["temperature"] = temperature
 
-        print('asking')
         chat_completion = client.chat.completions.create(**kwargs)
-        print('asked')
 
         ret = [chat_completion.choices[i].message.content for i in range(n)]
         return ret

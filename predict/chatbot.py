@@ -13,13 +13,15 @@ def ask_huatuo(bot_instance: HuatuoChatbot, prompt: str, images: List[str] = Non
     return bot_instance.inference(text=prompt, images=images)[0]
 
 
-def ask_gpt_4o(prompt: str, images: List[str] = None) -> str:
+def ask_gpt_4o(prompt: str, images: List[str] = None, step_str: str = '') -> str:
+    print(f'Asking gpt-4o ({step_str})')
     return OpenAIUtils.ask(client=OpenAIUtils.gpt_client,
                            msg=prompt,
                            image_dir=images,
                            model='gpt-4o',
                            max_token=1000,
-                           temperature=0.1)[0]
+                           system_prompt='You are medical expert examing X-ray images. Ensure your answer can be interpreted in JSON format.',
+                           temperature=0.5)[0]
 
 def ask_qwen(prompt: str, images: List[str] = None) -> str:
     return OpenAIUtils.ask(client=OpenAIUtils.qwen_client,
@@ -44,7 +46,7 @@ def get_huatuo_instance(device):
     return _cached_bot_instance
 
 
-def ask(prompt: str, image_dirs: List[str], device: str, bot_type: str, chat_type: str) -> Union[Tuple[bool, str, str], Tuple[bool, bool]]:
+def ask(prompt: str, image_dirs: List[str], device: str, bot_type: str, chat_type: str, step_str: str = '') -> Union[Tuple[bool, str, str], Tuple[bool, bool]]:
     '''
         type=ask: ask a question, return (success, answer, reasoning)
         type=verify: verify the answer, return (success, is_correct)
@@ -70,7 +72,7 @@ def ask(prompt: str, image_dirs: List[str], device: str, bot_type: str, chat_typ
         response = ask_huatuo(bot_instance, prompt=prompt, images=image_dirs)
         
     elif bot_type == 'gpt-4o':
-        response = ask_gpt_4o(prompt=prompt, images=image_dirs)
+        response = ask_gpt_4o(prompt=prompt, images=image_dirs, step_str=step_str)
     elif bot_type == 'qwen2.5-vl':
         response = ask_qwen(prompt=prompt, images=image_dirs)
 
@@ -89,6 +91,8 @@ def ask(prompt: str, image_dirs: List[str], device: str, bot_type: str, chat_typ
     
     except json.JSONDecodeError as e:
         print('Error decoding returned JSON of VLM')
+        print(f'Input: (with {len(image_dirs)} images appended)')
+        print(prompt[:150].replace('\n', '\\n'))
         print('Raw response:')
         print(response)
         if chat_type == 'ask':

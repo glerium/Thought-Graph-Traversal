@@ -112,18 +112,17 @@ def process(idx: int, sample_id: str, gt: str, image_dir: List[str],
             )
             verified = False
             while not verified:
-                while True:
-                    success, answer, reasoning = chatbot.ask(prompt=question_prompt, 
-                                                             image_dirs=image_dir, 
-                                                             device=device, 
-                                                             bot_type=BOT_TYPE,
-                                                             chat_type='ask')
+                success, answer, reasoning = chatbot.ask(prompt=question_prompt, 
+                                                         image_dirs=image_dir, 
+                                                         device=device, 
+                                                         bot_type=BOT_TYPE,
+                                                         chat_type='ask',
+                                                         step_str=f'{organ} Q{q_idx}/{len(question_examples)}')
+                if success:
                     answer = answer.replace('.', '').replace(',', '').strip()
-                    if success:
-                        break
-                    else:
-                        print('Failed when prompting VLM. Retrying...')
-                        time.sleep(0.5)
+                else:
+                    answer = ''
+                        # time.sleep(0.5)
                 #     return idx, sample_id, 0, None, ""
                 
                 verify_prompt = verify_template.format(
@@ -135,8 +134,10 @@ def process(idx: int, sample_id: str, gt: str, image_dir: List[str],
                                                 image_dirs=image_dir,
                                                 device=device,
                                                 bot_type=BOT_TYPE,
-                                                chat_type='verify')
-                # if not success:
+                                                chat_type='verify',
+                                                step_str=f'{organ} Q{q_idx}/{len(question_examples)} verify')
+                if not success:
+                    break
                 #     return idx, sample_id, 0, None, ""
             
             reasoning_str_all_sample += reasoning
@@ -156,8 +157,9 @@ def process(idx: int, sample_id: str, gt: str, image_dir: List[str],
             success, organ_summary_answer, reasoning = chatbot.ask(prompt=prompt,
                                                                    image_dirs=image_dir, 
                                                                    device=device, 
-                                                                   bot_type='huatuo',
-                                                                   chat_type='ask')
+                                                                   bot_type=BOT_TYPE,
+                                                                   chat_type='ask',
+                                                                   step_str=f'{organ} summary')
             if success:
                 break
             else:
@@ -212,7 +214,10 @@ if __name__ == '__main__':
             # print(row)
             sample_id = row.sample_id
             gt = row.text
-            image_dir = glob.glob(os.path.join(DATA_PATH, f'{sample_id}/*.jpg'))
+            
+            image_dir = []
+            image_dir.extend(glob.glob(os.path.join(DATA_PATH, f'{sample_id}/*.jpg')))
+            image_dir.extend(glob.glob(os.path.join(DATA_PATH, f'{sample_id}/*.png')))
             
             device = 'cuda:0'
 
