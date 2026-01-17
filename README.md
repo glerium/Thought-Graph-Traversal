@@ -2,7 +2,7 @@
 
 <div align="center">
 <h4>
-  📃 <a href="https://arxiv.org/abs/xxxx.xxxxx" target="_blank">arXiv Preprint</a>
+  📃 <a href="https://arxiv.org/abs/2506.11989" target="_blank">arXiv Preprint</a>
 </h4>
 </div>
 
@@ -189,7 +189,7 @@ If you find our work useful, please consider citing our paper:
 @article{yao2025radiology,
   title={Simple Radiology VLLM Test-time Scaling with Thought Graph Traversal},
   author={Yao, Yue and Wen, Zelin and Tong, Yan and Tian, Xinyu and Li, Xuqing and Ma, Xiao and Xu, Dongliang and Gedeon, Tom},
-  journal={arXiv preprint arXiv:XXXX.XXXXX}, 
+  journal={arXiv preprint arXiv:2506.11989}, 
   year={2025}
 }
 ```
