@@ -2,7 +2,7 @@
 
 <div align="center">
 <h4>
-  📃 <a href="https://arxiv.org/abs/2506.11989" target="_blank">arXiv Preprint</a>
+  📃 <a href="https://arxiv.org/abs/2506.11989" target="_blank">arXiv Preprint</a> • 📃 <a href="https://doi.org/10.1016/j.patcog.2026.113639" target="_blank">Paper Link</a>
 </h4>
 </div>
 
